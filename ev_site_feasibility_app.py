@@ -71,8 +71,8 @@ def is_in_high_seismic_zone(lat, lon):
     params = {
         "latitude": round(lat, 6),
         "longitude": round(lon, 6),
-        "riskCategory": "ii",
-        "siteClass": "D"
+        "riskCategory": "II",
+        "siteClass": "d"
     }
     try:
         response = requests.get(url, params=params, timeout=10)
