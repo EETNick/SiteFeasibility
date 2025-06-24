@@ -69,7 +69,7 @@ def is_within_temp_range(lat, lon):
     return temp_ok
 
 def is_in_flood_zone(lat, lon):
-    url = "https://hazards.fema.gov/gis/nfhl/rest/services/public/NFHL/MapServer/28/query"
+    url = "https://hazards.fema.gov/gis/nfhl/rest/services/public/NFHL/MapServer/0/query"
     params = {
         "geometry": f"{lon},{lat}",
         "geometryType": "esriGeometryPoint",
@@ -87,9 +87,9 @@ def is_in_flood_zone(lat, lon):
     except Exception as e:
         st.warning(f"FEMA flood zone API error: {e}")
         return False
-
+        
 def is_in_high_seismic_zone(lat, lon):
-    url = f"https://earthquake.usgs.gov/ws/designmaps/asce7-16.json?latitude={lat}&longitude={lon}&riskCategory=II&siteClass=D"
+    url = f"https://earthquake.usgs.gov/ws/designmaps/asce7-16.json?latitude={lat}&longitude={lon}&riskCategory=ii&siteClass=D"
     try:
         response = requests.get(url, timeout=10)
         response.raise_for_status()
