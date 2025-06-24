@@ -23,7 +23,7 @@ def geocode_address(address):
 @@ -23,54 +25,48 @@
     way(around:{ROAD_DISTANCE_THRESHOLD * 1000},{lat},{lon})["highway"];
     out body;
-    """
+    
     response = requests.get(overpass_url, params={'data': query})
     data = response.json()
     return len(data.get("elements", [])) > 0
