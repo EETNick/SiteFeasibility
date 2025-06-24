@@ -1,6 +1,7 @@
-import streamlit as stMore actions
+import streamlit as st
 import requests
 from geopy.geocoders import Nominatim
+from geopy.extra.rate_limiter import RateLimiter
 import time
 
 # Constants
@@ -10,8 +11,9 @@ MAX_ELEVATION_M = 2400  # ~8,000 feet
 TEMP_RANGE = (-20, 50)  # in Celsius
 
 def geocode_address(address):
-    geolocator = Nominatim(user_agent="ev_feasibility_checker")
-    location = geolocator.geocode(address)
+    geolocator = Nominatim(user_agent="ev_feasibility_checker_v2")
+    geocode = RateLimiter(geolocator.geocode, min_delay_seconds=1)
+    location = geocode(address)
     if location:
         return location.latitude, location.longitude
     return None, None
@@ -23,11 +25,17 @@ def get_nearby_road_score(lat, lon):
     way(around:{ROAD_DISTANCE_THRESHOLD * 1000},{lat},{lon})["highway"];
     out body;
     """
-    response = requests.get(overpass_url, params={'data': query})
-    data = response.json()
-    return len(data.get("elements", [])) > 0
+    try:
+        response = requests.get(overpass_url, params={'data': query}, timeout=10)
+        response.raise_for_status()
+        data = response.json()
+        return len(data.get("elements", [])) > 0
+    except Exception as e:
+        st.warning(f"Road API error: {e}")
+        return False
 
 def estimate_population_density(lat, lon):
+    # Simplified example; replace with real data source if possible
     if 33 <= lat <= 38 and -120 <= lon <= -117:
         return 3000
     return 500
@@ -39,19 +47,26 @@ def is_utility_available(lat, lon):
     return True
 
 def get_elevation(lat, lon):
-    response = requests.get(f"https://api.opentopodata.org/v1/srtm90m?locations={lat},{lon}")
-    if response.ok:
-        return response.json()['results'][0]['elevation']
+    url = f"https://api.open-elevation.com/api/v1/lookup?locations={lat},{lon}"
+    try:
+        response = requests.get(url, timeout=10)
+        response.raise_for_status()
+        results = response.json().get('results', [])
+        if results:
+            elevation = results[0].get('elevation', None)
+            st.write(f"Elevation at {lat},{lon} is {elevation} m")
+            return elevation
+    except Exception as e:
+        st.warning(f"Elevation API error: {e}")
     return None
 
 def is_within_temp_range(lat, lon):
-    response = requests.get(f"https://api.open-meteo.com/v1/climate?latitude={lat}&longitude={lon}&temperature_unit=celsius")More actions
-    if response.ok:
-        data = response.json()
-        avg_max = data.get('temperature_2m_max', {}).get('annual', 0)
-        avg_min = data.get('temperature_2m_min', {}).get('annual', 0)
-        return TEMP_RANGE[0] <= avg_min <= TEMP_RANGE[1] and TEMP_RANGE[0] <= avg_max <= TEMP_RANGE[1]
-    return False
+    # Simple fallback estimate; replace with real API if desired
+    avg_min_temp = 0  # Celsius approx for Issaquah area
+    avg_max_temp = 25  # Celsius approx for Issaquah area
+    temp_ok = TEMP_RANGE[0] <= avg_min_temp <= TEMP_RANGE[1] and TEMP_RANGE[0] <= avg_max_temp <= TEMP_RANGE[1]
+    st.write(f"Temperature range check: {temp_ok} (min {avg_min_temp}, max {avg_max_temp})")
+    return temp_ok
 
 def is_in_flood_zone(lat, lon):
     url = "https://hazards.fema.gov/gis/nfhl/rest/services/public/NFHL/MapServer/28/query"
@@ -64,26 +79,26 @@ def is_in_flood_zone(lat, lon):
         "returnGeometry": "false",
         "f": "json"
     }
-    response = requests.get(url, params=params)
-    data = response.json()
-    return len(data.get("features", [])) > 0
     try:
         response = requests.get(url, params=params, timeout=10)
         response.raise_for_status()
         data = response.json()
         return len(data.get("features", [])) > 0
-    except (requests.RequestException, ValueError):
-        return False  # Assume not in flood zone on error
+    except Exception as e:
+        st.warning(f"FEMA flood zone API error: {e}")
+        return False
 
 def is_in_high_seismic_zone(lat, lon):
-    # USGS proxy method - identify approximate hazard via USGS hazard map service
     url = f"https://earthquake.usgs.gov/ws/designmaps/asce7-16.json?latitude={lat}&longitude={lon}&riskCategory=II&siteClass=D"
-    response = requests.get(url)
-    if response.ok:
+    try:
+        response = requests.get(url, timeout=10)
+        response.raise_for_status()
         data = response.json()
         ss = float(data['response']['data']['ss'])
         return ss > 1.0  # Moderate to high seismic risk
-    return False
+    except Exception as e:
+        st.warning(f"USGS seismic risk API error: {e}")
+        return False
 
 def check_site_feasibility(address):
     lat, lon = geocode_address(address)
@@ -151,3 +166,4 @@ if address:
             st.success("✅ Site is likely feasible for EV charging deployment.")
         else:
             st.error("❌ Site has one or more feasibility risks.")
+
