@@ -69,35 +69,49 @@ def is_within_temp_range(lat, lon):
     return temp_ok
 
 def is_in_flood_zone(lat, lon):
-    url = "https://hazards.fema.gov/gis/nfhl/rest/services/public/NFHL/MapServer/0/query"
+    url = "https://hazards.fema.gov/gis/nfhl/rest/services/public/NFHL/MapServer/WFSServer"
     params = {
-        "geometry": f"{lon},{lat}",
-        "geometryType": "esriGeometryPoint",
-        "inSR": "4326",
-        "spatialRel": "esriSpatialRelIntersects",
-        "outFields": "*",
-        "returnGeometry": "false",
-        "f": "json"
+        "service": "WFS",
+        "version": "1.1.0",
+        "request": "GetFeature",
+        "typeName": "NFHL:NFHL",
+        "outputFormat": "application/json",
+        "srsName": "EPSG:4326",
+        "bbox": f"{lon},{lat},{lon},{lat}"
     }
     try:
-        response = requests.get(url, params=params, timeout=10)
-        response.raise_for_status()
-        data = response.json()
-        return len(data.get("features", [])) > 0
+        r = requests.get(url, params=params, timeout=10)
+        r.raise_for_status()
+        data = r.json()
+        features = data.get("features", [])
+        return len(features) > 0
     except Exception as e:
-        st.warning(f"FEMA flood zone API error: {e}")
+        st.warning(f"FEMA flood zone WFS error: {e}")
         return False
         
 def is_in_high_seismic_zone(lat, lon):
-    url = f"https://earthquake.usgs.gov/ws/designmaps/asce7-16.json?latitude={lat}&longitude={lon}&riskCategory=ii&siteClass=D"
+    url = "https://earthquake.usgs.gov/ws/designmaps/asce7-16"
+    params = {
+        "service": "WFS",
+        "version": "1.1.0",
+        "request": "GetFeature",
+        "typeName": "asce7-16:DesignMap",
+        "outputFormat": "application/json",
+        "srsName": "EPSG:4326",
+        "bbox": f"{lon},{lat},{lon},{lat}"
+    }
     try:
-        response = requests.get(url, timeout=10)
-        response.raise_for_status()
-        data = response.json()
-        ss = float(data['response']['data']['ss'])
-        return ss > 1.0  # Moderate to high seismic risk
+        r = requests.get(url, params=params, timeout=10)
+        r.raise_for_status()
+        data = r.json()
+        features = data.get("features", [])
+        if not features:
+            return False
+        ss = float(features[0]['properties'].get('ss', 0))
+        st.write(f"Seismic ss from WFS: {ss}")
+        return ss > 1.0
     except Exception as e:
-        st.warning(f"USGS seismic risk API error: {e}")
+        st.warning(f"USGS seismic WFS error: {e}")
         return False
 
 def check_site_feasibility(address):
