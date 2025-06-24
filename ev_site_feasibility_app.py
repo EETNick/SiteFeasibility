@@ -39,18 +39,31 @@ def is_utility_available(lat, lon):
     return True
 
 def get_elevation(lat, lon):
-    response = requests.get(f"https://api.opentopodata.org/v1/srtm90m?locations={lat},{lon}")
-    if response.ok:
-        return response.json()['results'][0]['elevation']
+    url = f"https://api.open-elevation.com/api/v1/lookup?locations={lat},{lon}"
+    try:
+        response = requests.get(url, timeout=10)
+        if response.ok:
+            return response.json()['results'][0]['elevation']
+    except Exception:
+        pass
     return None
 
 def is_within_temp_range(lat, lon):
-    response = requests.get(f"https://api.open-meteo.com/v1/climate?latitude={lat}&longitude={lon}&temperature_unit=celsius")
-    if response.ok:
-        data = response.json()
-        avg_max = data.get('temperature_2m_max', {}).get('annual', 0)
-        avg_min = data.get('temperature_2m_min', {}).get('annual', 0)
-        return TEMP_RANGE[0] <= avg_min <= TEMP_RANGE[1] and TEMP_RANGE[0] <= avg_max <= TEMP_RANGE[1]
+    url = (
+        f"https://climate-api.open-meteo.com/v1/climate"
+        f"?latitude={lat}&longitude={lon}&temperature_unit=celsius"
+        f"&models=ERA5&format=json"
+    )
+    try:
+        response = requests.get(url, timeout=10)
+        if response.ok:
+            data = response.json()
+            annual = data.get('temperature_2m_mean', {}).get('annual', {})
+            avg_min = annual.get('min', -50)
+            avg_max = annual.get('max', 60)
+            return TEMP_RANGE[0] <= avg_min and avg_max <= TEMP_RANGE[1]
+    except Exception:
+        pass
     return False
 
 def is_in_flood_zone(lat, lon):
