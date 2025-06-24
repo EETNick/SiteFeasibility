@@ -2,7 +2,7 @@ import streamlit as st
 import requests
 from geopy.geocoders import Nominatim
 from geopy.extra.rate_limiter import RateLimiter
-import time
+import timeMore actions
 
 # Constants
 POP_DENSITY_THRESHOLD = 1000
@@ -33,6 +33,10 @@ def get_nearby_road_score(lat, lon):
     except Exception as e:
         st.warning(f"Road API error: {e}")
         return False
+
+def estimate_population_density(lat, lon):
+    # Simplified logic — replace with a real API or dataset
+    return 500  # default to low density for now
 
 def is_zoning_compatible(address):
     return "commercial" in address.lower() or "industrial" in address.lower()
@@ -109,6 +113,7 @@ def check_site_feasibility(address):
     time.sleep(1)
 
     near_roads = get_nearby_road_score(lat, lon)
+    pop_density = estimate_population_density(lat, lon)
     zoning_ok = is_zoning_compatible(address)
     utility_ok = is_utility_available(lat, lon)
 
