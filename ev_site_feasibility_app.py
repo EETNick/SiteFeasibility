@@ -38,15 +38,18 @@ def is_zoning_compatible(address):
 def is_utility_available(lat, lon):
     return True
 
-def get_elevation(lat, lon):
-    url = f"https://api.open-elevation.com/api/v1/lookup?locations={lat},{lon}"
+def get_elevation_usgs(lat, lon):
+    url = f"https://nationalmap.gov/epqs/pqs.php?x={lon}&y={lat}&units=Meters&output=json"
     try:
         response = requests.get(url, timeout=10)
-        if response.ok:
-            return response.json()['results'][0]['elevation']
-    except Exception:
-        pass
-    return None
+        response.raise_for_status()
+        data = response.json()
+        elevation = data['USGS_Elevation_Point_Query_Service']['Elevation_Query']['Elevation']
+        st.write(f"Elevation (USGS) at {lat},{lon} is {elevation} m")
+        return elevation
+    except Exception as e:
+        st.warning(f"USGS Elevation API error: {e}")
+        return None
 
 def is_within_temp_range(lat, lon):
     url = (
