@@ -18,33 +18,6 @@ def geocode_address(address):
         return location.latitude, location.longitude
     return None, None
 
-def get_nearby_road_score(lat, lon):
-    overpass_url = "http://overpass-api.de/api/interpreter"
-    query = f"""
-    [out:json];
-    way(around:{ROAD_DISTANCE_THRESHOLD * 1000},{lat},{lon})["highway"];
-    out body;
-    """
-    try:
-        response = requests.get(overpass_url, params={'data': query}, timeout=10)
-        response.raise_for_status()
-        data = response.json()
-        return len(data.get("elements", [])) > 0
-    except Exception as e:
-        st.warning(f"Road API error: {e}")
-        return False
-
-def estimate_population_density(lat, lon):
-    # Simplified example; replace with real data source if possible
-    if 33 <= lat <= 38 and -120 <= lon <= -117:
-        return 3000
-    return 500
-
-def is_zoning_compatible(address):
-    return "commercial" in address.lower() or "industrial" in address.lower()
-
-def is_utility_available(lat, lon):
-    return True
 
 def get_elevation(lat, lon):
     url = f"https://api.open-elevation.com/api/v1/lookup?locations={lat},{lon}"
@@ -110,10 +83,6 @@ def check_site_feasibility(address):
 
     time.sleep(1)
 
-    near_roads = get_nearby_road_score(lat, lon)
-    pop_density = estimate_population_density(lat, lon)
-    zoning_ok = is_zoning_compatible(address)
-    utility_ok = is_utility_available(lat, lon)
 
     elevation = get_elevation(lat, lon) or 1000
     elevation_ok = elevation < MAX_ELEVATION_M
@@ -136,10 +105,6 @@ def check_site_feasibility(address):
     return {
         "latitude": lat,
         "longitude": lon,
-        "near_major_roads": near_roads,
-        "population_density": pop_density,
-        "zoning_compatible": zoning_ok,
-        "utility_available": utility_ok,
         "elevation_m": elevation,
         "elevation_ok": elevation_ok,
         "temperature_range_ok": temp_ok,
