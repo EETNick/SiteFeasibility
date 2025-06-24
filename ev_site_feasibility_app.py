@@ -34,10 +34,6 @@ def get_nearby_road_score(lat, lon):
         st.warning(f"Road API error: {e}")
         return False
 
-def estimate_population_density(lat, lon):
-    # Simplified logic — replace with a real API or dataset
-    return 500  # default to low density for now
-
 def is_zoning_compatible(address):
     return "commercial" in address.lower() or "industrial" in address.lower()
 
