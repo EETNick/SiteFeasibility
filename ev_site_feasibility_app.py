@@ -109,7 +109,6 @@ def check_site_feasibility(address):
     time.sleep(1)
 
     near_roads = get_nearby_road_score(lat, lon)
-    pop_density = estimate_population_density(lat, lon)
     zoning_ok = is_zoning_compatible(address)
     utility_ok = is_utility_available(lat, lon)
 
