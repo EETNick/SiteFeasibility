@@ -67,18 +67,21 @@ def is_in_flood_zone(lat, lon):
         return False
         
 def is_in_high_seismic_zone(lat, lon):
-    url = f"https://earthquake.usgs.gov/ws/designmaps/asce7-16.json"
+    url = "https://earthquake.usgs.gov/ws/designmaps/asce7-16.json"
     params = {
         "latitude": round(lat, 6),
         "longitude": round(lon, 6),
-        "riskCategory": "II",
-        "siteClass": "d"
+        "riskCategory": "II",        # uppercase is acceptable
+        "siteClass": "D",
+        "title": f"{lat:.6f},{lon:.6f}"
     }
+    headers = {"User-Agent": "EV-Feasibility-App"}
     try:
-        response = requests.get(url, params=params, timeout=10)
+        response = requests.get(url, params=params, headers=headers, timeout=10)
         response.raise_for_status()
         data = response.json()
         ss = float(data['response']['data']['ss'])
+        st.write(f"USGS seismic Ss value: {ss}")
         return ss > 1.0
     except Exception as e:
         try:
