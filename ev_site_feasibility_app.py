@@ -57,21 +57,34 @@ def is_in_flood_zone(lat, lon):
         response = requests.get(url, params=params, timeout=10)
         response.raise_for_status()
         data = response.json()
-        return len(data.get("features", [])) > 0
+        if "features" in data:
+            return len(data["features"]) > 0
+        else:
+            st.warning("FEMA data response is incomplete or missing features.")
+            return False
     except Exception as e:
         st.warning(f"FEMA flood zone API error: {e}")
         return False
         
 def is_in_high_seismic_zone(lat, lon):
-    url = f"https://earthquake.usgs.gov/ws/designmaps/asce7-16.json?latitude={lat}&longitude={lon}&riskCategory=ii&siteClass=D"
+    url = f"https://earthquake.usgs.gov/ws/designmaps/asce7-16.json"
+    params = {
+        "latitude": round(lat, 6),
+        "longitude": round(lon, 6),
+        "riskCategory": "ii",
+        "siteClass": "D"
+    }
     try:
-        response = requests.get(url, timeout=10)
+        response = requests.get(url, params=params, timeout=10)
         response.raise_for_status()
         data = response.json()
         ss = float(data['response']['data']['ss'])
-        return ss > 1.0  # Moderate to high seismic risk
+        return ss > 1.0
     except Exception as e:
-        st.warning(f"USGS seismic risk API error: {e}")
+        try:
+            st.warning(f"USGS seismic risk API error: {e}\nDetails: {response.text}")
+        except:
+            st.warning(f"USGS seismic risk API error: {e}")
         return False
 
 def check_site_feasibility(address):
