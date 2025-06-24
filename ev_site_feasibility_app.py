@@ -140,7 +140,7 @@ def check_site_feasibility(address):
         "elevation_m": elevation,
         "elevation_ok": elevation_ok,
         "temperature_range_ok": temp_ok,
-        "in_flood_zone": flood_zone,
+        "in_fema_flood_zone": flood_zone,
         "in_high_seismic_zone": seismic_risk,
         "feasible": feasible
     }
