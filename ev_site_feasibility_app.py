@@ -5,10 +5,8 @@ from geopy.extra.rate_limiter import RateLimiter
 import time
 
 # Constants
-POP_DENSITY_THRESHOLD = 1000
-ROAD_DISTANCE_THRESHOLD = 0.5  # km
 MAX_ELEVATION_M = 2400  # ~8,000 feet
-TEMP_RANGE = (-20, 50)  # in Celsius
+
 
 def geocode_address(address):
     geolocator = Nominatim(user_agent="ev_feasibility_checker_v2")
@@ -92,10 +90,6 @@ def check_site_feasibility(address):
     seismic_risk = is_in_high_seismic_zone(lat, lon)
 
     feasible = all([
-        near_roads,
-        pop_density > POP_DENSITY_THRESHOLD,
-        zoning_ok,
-        utility_ok,
         elevation_ok,
         temp_ok,
         not flood_zone,
