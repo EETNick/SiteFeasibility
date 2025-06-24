@@ -64,9 +64,13 @@ def is_in_flood_zone(lat, lon):
         "returnGeometry": "false",
         "f": "json"
     }
-    response = requests.get(url, params=params)
-    data = response.json()
-    return len(data.get("features", [])) > 0
+    try:
+        response = requests.get(url, params=params, timeout=10)
+        response.raise_for_status()
+        data = response.json()
+        return len(data.get("features", [])) > 0
+    except (requests.RequestException, ValueError):
+        return False  # Assume not in flood zone on error
 
 def is_in_high_seismic_zone(lat, lon):
     # USGS proxy method - identify approximate hazard via USGS hazard map service
