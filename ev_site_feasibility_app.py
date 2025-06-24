@@ -60,7 +60,7 @@ def get_elevation(lat, lon):
         st.warning(f"Elevation API error: {e}")
     return None
 
-def is_in_heat_warning_zone(lat, lon):
+def is_not_in_heat_warning_zone(lat, lon):
     """
     Based on the map showing % of days > 45°C, returns True if the site is in a high-heat area.
     Rough bounds drawn from Furnace Creek / southwest heat zones.
@@ -68,8 +68,8 @@ def is_in_heat_warning_zone(lat, lon):
     # Approx bounding box for high-temp zone
     # Covers parts of SE California, SW Arizona, S Nevada
     if 33 <= lat <= 37 and -118 <= lon <= -112:
-        return True
-    return False
+        return False
+    return True
 
 def is_in_flood_zone(lat, lon):
     url = "https://hazards.fema.gov/gis/nfhl/rest/services/public/NFHL/MapServer/0/query"
@@ -118,7 +118,7 @@ def check_site_feasibility(address):
     elevation = get_elevation(lat, lon) or 1000
     elevation_ok = elevation < MAX_ELEVATION_M
 
-    temp_ok = is_in_heat_warning_zone(lat, lon)
+    temp_ok = is_not_in_heat_warning_zone(lat, lon)
     flood_zone = is_in_flood_zone(lat, lon)
     seismic_risk = is_in_high_seismic_zone(lat, lon)
 
