@@ -110,7 +110,7 @@ def check_site_feasibility(address):
     zoning_ok = is_zoning_compatible(address)
     utility_ok = is_utility_available(lat, lon)
 
-    elevation = get_elevation(lat, lon) or 1000
+    elevation = get_elevation_usgs(lat, lon) or 1000
     elevation_ok = elevation < MAX_ELEVATION_M
 
     temp_ok = is_within_temp_range(lat, lon)
