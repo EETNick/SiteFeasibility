@@ -60,58 +60,47 @@ def get_elevation(lat, lon):
         st.warning(f"Elevation API error: {e}")
     return None
 
-def is_within_temp_range(lat, lon):
-    # Simple fallback estimate; replace with real API if desired
-    avg_min_temp = 0  # Celsius approx for Issaquah area
-    avg_max_temp = 25  # Celsius approx for Issaquah area
-    temp_ok = TEMP_RANGE[0] <= avg_min_temp <= TEMP_RANGE[1] and TEMP_RANGE[0] <= avg_max_temp <= TEMP_RANGE[1]
-    st.write(f"Temperature range check: {temp_ok} (min {avg_min_temp}, max {avg_max_temp})")
-    return temp_ok
+def is_in_heat_warning_zone(lat, lon):
+    """
+    Based on the map showing % of days > 45°C, returns True if the site is in a high-heat area.
+    Rough bounds drawn from Furnace Creek / southwest heat zones.
+    """
+    # Approx bounding box for high-temp zone
+    # Covers parts of SE California, SW Arizona, S Nevada
+    if 33 <= lat <= 37 and -118 <= lon <= -112:
+        return True
+    return False
 
 def is_in_flood_zone(lat, lon):
-    url = "https://hazards.fema.gov/gis/nfhl/rest/services/public/NFHL/MapServer/WFSServer"
+    url = "https://hazards.fema.gov/gis/nfhl/rest/services/public/NFHL/MapServer/0/query"
     params = {
-        "service": "WFS",
-        "version": "1.1.0",
-        "request": "GetFeature",
-        "typeName": "NFHL:NFHL",
-        "outputFormat": "application/json",
-        "srsName": "EPSG:4326",
-        "bbox": f"{lon},{lat},{lon},{lat}"
+        "geometry": f"{lon},{lat}",
+        "geometryType": "esriGeometryPoint",
+        "inSR": "4326",
+        "spatialRel": "esriSpatialRelIntersects",
+        "outFields": "*",
+        "returnGeometry": "false",
+        "f": "json"
     }
     try:
-        r = requests.get(url, params=params, timeout=10)
-        r.raise_for_status()
-        data = r.json()
-        features = data.get("features", [])
-        return len(features) > 0
+        response = requests.get(url, params=params, timeout=10)
+        response.raise_for_status()
+        data = response.json()
+        return len(data.get("features", [])) > 0
     except Exception as e:
-        st.warning(f"FEMA flood zone WFS error: {e}")
+        st.warning(f"FEMA flood zone API error: {e}")
         return False
         
 def is_in_high_seismic_zone(lat, lon):
-    url = "https://earthquake.usgs.gov/ws/designmaps/asce7-16"
-    params = {
-        "service": "WFS",
-        "version": "1.1.0",
-        "request": "GetFeature",
-        "typeName": "asce7-16:DesignMap",
-        "outputFormat": "application/json",
-        "srsName": "EPSG:4326",
-        "bbox": f"{lon},{lat},{lon},{lat}"
-    }
+    url = f"https://earthquake.usgs.gov/ws/designmaps/asce7-16.json?latitude={lat}&longitude={lon}&riskCategory=ii&siteClass=D"
     try:
-        r = requests.get(url, params=params, timeout=10)
-        r.raise_for_status()
-        data = r.json()
-        features = data.get("features", [])
-        if not features:
-            return False
-        ss = float(features[0]['properties'].get('ss', 0))
-        st.write(f"Seismic ss from WFS: {ss}")
-        return ss > 1.0
+        response = requests.get(url, timeout=10)
+        response.raise_for_status()
+        data = response.json()
+        ss = float(data['response']['data']['ss'])
+        return ss > 1.0  # Moderate to high seismic risk
     except Exception as e:
-        st.warning(f"USGS seismic WFS error: {e}")
+        st.warning(f"USGS seismic risk API error: {e}")
         return False
 
 def check_site_feasibility(address):
@@ -129,7 +118,7 @@ def check_site_feasibility(address):
     elevation = get_elevation(lat, lon) or 1000
     elevation_ok = elevation < MAX_ELEVATION_M
 
-    temp_ok = is_within_temp_range(lat, lon)
+    temp_ok = is_in_heat_warning_zone(lat, lon)
     flood_zone = is_in_flood_zone(lat, lon)
     seismic_risk = is_in_high_seismic_zone(lat, lon)
 
