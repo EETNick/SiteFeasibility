@@ -71,7 +71,7 @@ def is_in_high_seismic_zone(lat, lon):
     params = {
         "latitude": round(lat, 6),
         "longitude": round(lon, 6),
-        "riskCategory": "II",        # uppercase is acceptable
+        "riskCategory": "III",        # uppercase is acceptable
         "siteClass": "D",
         "title": f"{lat:.6f},{lon:.6f}"
     }
