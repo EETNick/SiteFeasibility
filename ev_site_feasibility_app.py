@@ -3,7 +3,7 @@ import requests
 from geopy.geocoders import Nominatim
 from geopy.extra.rate_limiter import RateLimiter
 import time
-import folium
+import st_folium
 from streamlit_folium import st_folium
 
 # Constants
