@@ -4,7 +4,7 @@ from geopy.geocoders import Nominatim
 from geopy.extra.rate_limiter import RateLimiter
 import time
 import st_folium
-from streamlit_folium import st_folium
+from streamlit_folium import folium
 
 # Constants
 MAX_ELEVATION_M = 2400  # ~8,000 feet
