@@ -3,6 +3,8 @@ import requests
 from geopy.geocoders import Nominatim
 from geopy.extra.rate_limiter import RateLimiter
 import time
+import folium
+from streamlit_folium import st_folium
 
 # Constants
 MAX_ELEVATION_M = 2400  # ~8,000 feet
@@ -77,6 +79,23 @@ def is_in_flood_zone(lat, lon):
         st.write(f"⚠️ FEMA Flood Zone: {zone}")
         return True
     return False
+
+def show_flood_map(lat, lon):
+    m = folium.Map(location=[lat, lon], zoom_start=15)
+
+    # Add FEMA's flood hazard WMS tile layer
+    folium.raster_layers.WmsTileLayer(
+        url="https://hazards.fema.gov/gis/nfhl/rest/services/public/NFHL/MapServer/export",
+        layers="28",
+        name="FEMA Flood Zones",
+        format="image/png",
+        transparent=True,
+        attribution="FEMA NFHL"
+    ).add_to(m)
+
+    folium.Marker([lat, lon], popup="Site").add_to(m)
+
+    st_folium(m, width=700, height=500)
         
 def is_in_high_seismic_zone(lat, lon):
     url = "https://earthquake.usgs.gov/ws/designmaps/asce7-16.json"
