@@ -44,20 +44,20 @@ def is_not_in_heat_warning_zone(lat, lon):
 
 def get_fema_fld_zone(lat, lon):
     """
-    Returns the FEMA flood zone designation (e.g., 'AE', 'X') for a given point,
-    or None if outside known zones or no coverage.
+    Queries FEMA flood zone via Esri's ArcGIS cloud-hosted FeatureServer.
+    Returns flood zone code (e.g., AE, X) or None if unknown.
     """
-    url = "http://hazards.fema.gov/gis/nfhl/rest/services/public/NFHL/MapServer/28/query"
+    url = "https://services.arcgis.com/hTO9rBv9gWvTzLkS/arcgis/rest/services/NFHL/FeatureServer/0/query"
     params = {
-        "where": "1=1",
         "geometry": f"{lon},{lat}",
         "geometryType": "esriGeometryPoint",
         "inSR": "4326",
-        "spatialRel": "esriSpatialRelWithin",
+        "spatialRel": "esriSpatialRelIntersects",
         "outFields": "FLD_ZONE",
         "returnGeometry": "false",
-        "f": "pjson"
+        "f": "json"
     }
+
     try:
         r = requests.get(url, params=params, timeout=10)
         r.raise_for_status()
@@ -68,7 +68,7 @@ def get_fema_fld_zone(lat, lon):
             return fld
         return None
     except Exception as e:
-        st.warning(f"FEMA flood zone query error: {e}")
+        st.warning(f"FEMA flood zone API error: {e}")
         return None
 
 def is_in_flood_zone(lat, lon):
