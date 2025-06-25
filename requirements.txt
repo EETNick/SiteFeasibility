@@ -3,5 +3,6 @@ geopy==2.4.1
 requests==2.32.2
 pandas
 matplotlib
-streamlit-folium==0.16.0
 folium==0.15.1
+streamlit-folium==0.16.0
+
