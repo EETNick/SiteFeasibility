@@ -42,32 +42,41 @@ def is_not_in_heat_warning_zone(lat, lon):
         return False
     return True
 
-def is_in_flood_zone(lat, lon):
-    url = "https://services.arcgis.com/hTO9rBv9gWvTzLkS/arcgis/rest/services/NFHL/FeatureServer/0/query"
+def get_fema_fld_zone(lat, lon):
+    """
+    Returns the FEMA flood zone designation (e.g., 'AE', 'X') for a given point,
+    or None if outside known zones or no coverage.
+    """
+    url = "http://hazards.fema.gov/gis/nfhl/rest/services/public/NFHL/MapServer/28/query"
     params = {
+        "where": "1=1",
         "geometry": f"{lon},{lat}",
         "geometryType": "esriGeometryPoint",
         "inSR": "4326",
-        "spatialRel": "esriSpatialRelIntersects",
+        "spatialRel": "esriSpatialRelWithin",
         "outFields": "FLD_ZONE",
         "returnGeometry": "false",
-        "f": "json"
+        "f": "pjson"
     }
     try:
-        response = requests.get(url, params=params, timeout=10)
-        response.raise_for_status()
-        data = response.json()
+        r = requests.get(url, params=params, timeout=10)
+        r.raise_for_status()
+        data = r.json()
         features = data.get("features", [])
         if features:
-            zone = features[0]["attributes"].get("FLD_ZONE", "Unknown")
-            st.write(f"⚠️ FEMA Flood Zone: {zone}")
-            return True
-        else:
-            st.info("✅ Not in FEMA-designated flood zone.")
-            return False
+            fld = features[0]["attributes"].get("FLD_ZONE")
+            return fld
+        return None
     except Exception as e:
-        st.warning(f"FEMA flood zone API error: {e}")
-        return False
+        st.warning(f"FEMA flood zone query error: {e}")
+        return None
+
+def is_in_flood_zone(lat, lon):
+    zone = get_fema_fld_zone(lat, lon)
+    if zone:
+        st.write(f"⚠️ FEMA Flood Zone: {zone}")
+        return True
+    return False
         
 def is_in_high_seismic_zone(lat, lon):
     url = "https://earthquake.usgs.gov/ws/designmaps/asce7-16.json"
