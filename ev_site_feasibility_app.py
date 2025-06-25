@@ -47,7 +47,7 @@ def get_fema_fld_zone(lat, lon):
     Returns the FEMA flood zone designation (e.g., 'AE', 'X') for a given point,
     or None if outside known zones or no coverage.
     """
-    url = "http://hazards.fema.gov/gis/nfhl/rest/services/public/NFHL/MapServer/28/query"
+    url = "http://hazards.fema.gov/gis/nfhl/rest/services/public/NFHL/MapServer/0/query"
     params = {
         "where": "1=1",
         "geometry": f"{lon},{lat}",
