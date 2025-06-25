@@ -7,7 +7,7 @@ import folium
 
 
 # Constants
-MAX_ELEVATION_M = 2400  # ~8,000 feet
+MAX_ELEVATION_M = 2000  # ~8,000 feet
 
 
 def geocode_address(address):
